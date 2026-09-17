@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  name      String
+  eventDate DateTime
+  seats     Seat[]
+  guests    Guest[]
+  createdAt DateTime @default(now())
+  hideSeatNumber Boolean @default(false)
+}
+
+model Seat {
+  id          Int     @id @default(autoincrement())
+  eventId     Int
+  tableNumber Int
+  seatNumber  Int
+  event       Event   @relation(fields: [eventId], references: [id])
+  guest       Guest?
+
+  @@unique([eventId, tableNumber, seatNumber])
+}
+
+model Guest {
+  id          Int      @id @default(autoincrement())
+  eventId     Int
+  seatId      Int?     @unique
+  fullName    String
+  email       String?
+  qrToken     String   @unique
+  isCheckedIn Boolean  @default(false)
+  checkedInAt DateTime?
+  event       Event    @relation(fields: [eventId], references: [id])
+  seat        Seat?    @relation(fields: [seatId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model AdminUser {
+  id        Int           @id @default(autoincrement())
+  email     String        @unique
+  password  String
+  name      String
+  role      String        @default("ADMIN")
+  createdAt DateTime      @default(now())
+  sessions  AdminSession[]
+}
+
+model AdminSession {
+  id          Int        @id @default(autoincrement())
+  adminUserId Int
+  tokenHash   String     @unique
+  createdAt   DateTime   @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  adminUser   AdminUser  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+}
